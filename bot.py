@@ -1,8 +1,3 @@
-# =========================================================
-# V2RayX TELEGRAM BOT
-# PART 1/4
-# =========================================================
-
 import os
 import asyncio
 import traceback
@@ -11,13 +6,13 @@ from datetime import datetime, timedelta
 from html import escape
 from urllib.parse import urlparse
 
+from dotenv import load_dotenv
 
 from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
-
 
 from telegram.ext import (
     Application,
@@ -30,25 +25,26 @@ from telegram.ext import (
 
 
 from database import (
-
     init_database,
-
     save_user,
     get_user,
     get_user_count,
 
     get_packages,
     get_package,
+
     add_package,
     update_package,
     set_package_status,
 
     create_order,
     get_order,
+
     get_pending_orders,
     get_user_orders,
 
     update_order_status,
+
     get_order_count,
     get_pending_count,
     get_total_sales,
@@ -59,7 +55,6 @@ from database import (
 
     get_referral_stats,
     create_referral_earning,
-
 )
 
 
@@ -70,161 +65,171 @@ from panel import (
 
 
 
-# =========================================================
-# DIRECT BOT SETTINGS
-# NO .ENV REQUIRED
-# =========================================================
+# ==============================
+# LOAD SETTINGS
+# ==============================
+
+load_dotenv()
 
 
-# Telegram Bot Token
-# අලුත් token එක මෙතන දාන්න
+def env(name, default=""):
 
-BOT_TOKEN = "8750154251:AAE_t_mXprxpL77LqK9i24-d9gxifsri-8U"
-
-
-
-# Telegram /id command එකෙන් ගන්න Admin ID
-
-ADMIN_ID = 7768611586
-
+    return str(
+        os.getenv(
+            name,
+            default
+        )
+        or ""
+    ).strip()
 
 
-# =========================================================
-# 3X-UI PANEL SETTINGS
-# =========================================================
 
-
-PANEL_URL = (
-    "https://hiru.v2raypoddaserver.ggff.net:11568/siaXP8HNhI9njPbC9Q/"
+BOT_TOKEN = env(
+    "BOT_TOKEN"
 )
 
 
-PANEL_USERNAME = (
-    "hiru"
-)
-
-
-PANEL_PASSWORD = (
-    "hiru"
-)
-
-
-PANEL_API_TOKEN = ""
-
-
-
-# =========================================================
-# PAYMENT SETTINGS
-# =========================================================
-
-
-BANK_NAME = (
-    "People's Bank"
-)
-
-
-ACCOUNT_NAME = (
-    "Hirusha Denuwan Gimhana"
-)
-
-
-ACCOUNT_NUMBER = (
-    "089200190081987"
-)
-
-
-BRANCH = (
-    "Katugasthota"
+ADMIN_ID = int(
+    env(
+        "ADMIN_ID",
+        "0"
+    )
 )
 
 
 
-# =========================================================
-# SUPPORT
-# =========================================================
+PANEL_URL = env(
+    "PANEL_URL"
+).rstrip("/")
 
 
-SUPPORT_USERNAME = (
-    "V2ray_podda"
+PANEL_USERNAME = env(
+    "PANEL_USERNAME"
+)
+
+
+PANEL_PASSWORD = env(
+    "PANEL_PASSWORD"
+)
+
+
+PANEL_API_TOKEN = env(
+    "PANEL_API_TOKEN"
 )
 
 
 
-# =========================================================
-# REFERRAL
-# =========================================================
+BANK_NAME = env(
+    "BANK_NAME",
+    "YOUR BANK"
+)
 
 
-REFERRAL_PERCENTAGE = 5
+ACCOUNT_NAME = env(
+    "ACCOUNT_NAME",
+    "V2RayX"
+)
+
+
+ACCOUNT_NUMBER = env(
+    "ACCOUNT_NUMBER",
+    "0000000000"
+)
+
+
+BRANCH = env(
+    "BRANCH",
+    "MAIN"
+)
+
+
+SUPPORT_USERNAME = env(
+    "SUPPORT_USERNAME",
+    "@support"
+)
 
 
 
-# =========================================================
+REFERRAL_PERCENTAGE = int(
+    env(
+        "REFERRAL_PERCENTAGE",
+        "5"
+    )
+)
+
+
+
+# ==============================
 # 3X-UI CONNECT
-# =========================================================
+# ==============================
 
 
 xui = ThreeXUI(
 
-    PANEL_URL.rstrip("/"),
+    PANEL_URL,
 
     PANEL_USERNAME,
 
     PANEL_PASSWORD,
 
-    PANEL_API_TOKEN,
+    PANEL_API_TOKEN
 
 )
 
 
 
-# =========================================================
+# ==============================
 # HELPERS
-# =========================================================
+# ==============================
 
 
-def safe_float(value, default=0.0):
+def safe_int(v, default=0):
 
     try:
-        return float(value)
 
-    except Exception:
+        return int(v)
+
+    except:
+
         return default
 
 
 
-def safe_int(value, default=0):
+def safe_float(v, default=0):
 
     try:
-        return int(value)
 
-    except Exception:
+        return float(v)
+
+    except:
+
         return default
 
 
 
-def gb_text(value):
-
-    value = safe_float(value)
-
-    if value <= 0:
-        return "Unlimited"
-
-    return f"{value:g} GB"
-
-
-
-def admin_only(user_id):
-
-    return safe_int(user_id) == ADMIN_ID
-
-
-
-def html_text(value):
+def html_text(v):
 
     return escape(
-        str(value or "")
+        str(v or "")
     )
+
+
+
+def gb_text(v):
+
+    v = safe_float(v)
+
+    if v <= 0:
+
+        return "Unlimited"
+
+    return f"{v:g} GB"
+
+
+
+def admin_only(uid):
+
+    return safe_int(uid) == ADMIN_ID
 
 
 
@@ -232,90 +237,17 @@ def url_host(url):
 
     try:
 
-        return (
-            urlparse(url)
-            .hostname
-            or ""
-        )
+        return urlparse(url).hostname or ""
 
-    except Exception:
+    except:
 
         return ""
 
 
 
-# =========================================================
-# VALIDATE SETTINGS
-# =========================================================
-
-
-def validate_settings():
-
-
-    missing = []
-
-
-    if not BOT_TOKEN:
-        missing.append(
-            "BOT_TOKEN"
-        )
-
-
-    if not ADMIN_ID:
-        missing.append(
-            "ADMIN_ID"
-        )
-
-
-    if not PANEL_URL:
-        missing.append(
-            "PANEL_URL"
-        )
-
-
-    if not PANEL_USERNAME:
-        missing.append(
-            "PANEL_USERNAME"
-        )
-
-
-    if not PANEL_PASSWORD:
-        missing.append(
-            "PANEL_PASSWORD"
-        )
-
-
-
-    if missing:
-
-        print(
-            "Missing settings:"
-        )
-
-
-        for x in missing:
-
-            print(
-                "-",
-                x
-            )
-
-
-        return False
-
-
-
-    return True
-# =========================================================
-# PART 2/4
-# MENU + START + ADMIN SYSTEM
-# =========================================================
-
-
-
-# =========================================================
+# ==============================
 # MAIN MENU
-# =========================================================
+# ==============================
 
 
 def main_menu():
@@ -340,9 +272,10 @@ def main_menu():
         [
 
             InlineKeyboardButton(
-                "🧾 My Orders",
+                "🧾 Orders",
                 callback_data="orders"
             ),
+
 
             InlineKeyboardButton(
                 "💳 Payment",
@@ -358,6 +291,7 @@ def main_menu():
                 "🎁 Referrals",
                 callback_data="referrals"
             ),
+
 
             InlineKeyboardButton(
                 "👤 Account",
@@ -377,14 +311,9 @@ def main_menu():
         ]
 
     ])
-
-
-
-
-
-# =========================================================
+    # ==============================
 # START COMMAND
-# =========================================================
+# ==============================
 
 
 async def start(
@@ -392,13 +321,10 @@ async def start(
     context: ContextTypes.DEFAULT_TYPE
 ):
 
-
     user = update.effective_user
-
 
     if not user:
         return
-
 
 
     referral = None
@@ -411,7 +337,6 @@ async def start(
             .strip()
             .upper()
         )
-
 
 
     try:
@@ -440,17 +365,11 @@ async def start(
 
     await update.message.reply_text(
 
-
         f"🟢 <b>V2RayX</b>\n\n"
-
-        f"Welcome "
-        f"{html_text(user.first_name)} 👋\n\n"
-
-        "Choose an option:",
-
+        f"Welcome {html_text(user.first_name)} 👋\n\n"
+        "Choose option:",
 
         parse_mode="HTML",
-
 
         reply_markup=main_menu()
 
@@ -459,36 +378,23 @@ async def start(
 
 
 
-
-# =========================================================
+# ==============================
 # GET TELEGRAM ID
-# =========================================================
+# ==============================
 
 
 async def get_id(
-
     update: Update,
-
     context: ContextTypes.DEFAULT_TYPE
-
 ):
-
 
     user = update.effective_user
 
 
-    if not user:
-        return
-
-
-
     await update.message.reply_text(
 
-
-        "🆔 <b>Your Telegram ID</b>\n\n"
-
+        f"🆔 Your ID:\n\n"
         f"<code>{user.id}</code>",
-
 
         parse_mode="HTML"
 
@@ -497,39 +403,26 @@ async def get_id(
 
 
 
-
-
-# =========================================================
+# ==============================
 # ADMIN COMMAND
-# =========================================================
+# ==============================
 
 
 async def admin(
-
     update: Update,
-
     context: ContextTypes.DEFAULT_TYPE
-
 ):
-
 
     user = update.effective_user
 
 
-    if not user:
-        return
-
-
-
     if not admin_only(user.id):
-
 
         await update.message.reply_text(
 
             "⛔ Admin only."
 
         )
-
 
         return
 
@@ -546,20 +439,14 @@ async def admin(
 
 
 
-
-
-
-# =========================================================
+# ==============================
 # ADMIN DASHBOARD
-# =========================================================
+# ==============================
 
 
 async def send_admin_dashboard(
-
     admin_id,
-
     context
-
 ):
 
 
@@ -606,34 +493,22 @@ async def send_admin_dashboard(
 
     text = (
 
-        "👨‍💼 <b>V2RayX ADMIN</b>\n"
-
+        "👨‍💼 <b>ADMIN PANEL</b>\n"
         "━━━━━━━━━━━━━━\n\n"
 
-
-        f"👥 Users : <b>{users}</b>\n"
-
-        f"🧾 Orders : <b>{orders}</b>\n"
-
-        f"⏳ Pending : <b>{pending}</b>\n"
-
-        f"💰 Sales : <b>Rs.{sales:.2f}</b>\n\n"
-
+        f"👥 Users : {users}\n"
+        f"🧾 Orders : {orders}\n"
+        f"⏳ Pending : {pending}\n"
+        f"💰 Sales : Rs.{sales}\n\n"
 
         "🔌 Panel\n"
-
-        f"<code>{html_text(PANEL_URL)}</code>\n\n"
-
-
-        "Select option:"
+        f"<code>{html_text(PANEL_URL)}</code>"
 
     )
 
 
 
-
     keyboard = [
-
 
 
         [
@@ -647,7 +522,6 @@ async def send_admin_dashboard(
             )
 
         ],
-
 
 
         [
@@ -668,9 +542,9 @@ async def send_admin_dashboard(
 
             InlineKeyboardButton(
 
-                "📡 Panel Inbounds",
+                "🔌 Test Panel",
 
-                callback_data="panel_inbounds"
+                callback_data="panel_test"
 
             )
 
@@ -682,15 +556,13 @@ async def send_admin_dashboard(
 
             InlineKeyboardButton(
 
-                "🔌 Test Panel",
+                "🔄 Refresh",
 
-                callback_data="panel_test"
+                callback_data="admin_home"
 
             )
 
         ]
-
-
 
     ]
 
@@ -699,15 +571,11 @@ async def send_admin_dashboard(
 
     await context.bot.send_message(
 
-
         chat_id=admin_id,
-
 
         text=text,
 
-
         parse_mode="HTML",
-
 
         reply_markup=InlineKeyboardMarkup(
             keyboard
@@ -718,12 +586,9 @@ async def send_admin_dashboard(
 
 
 
-
-
-
-# =========================================================
+# ==============================
 # SHOW PACKAGES
-# =========================================================
+# ==============================
 
 
 async def show_packages(query):
@@ -740,18 +605,13 @@ async def show_packages(query):
         await query.edit_message_text(
 
             "❌ Package error\n\n"
-
             f"<code>{html_text(e)}</code>",
-
 
             parse_mode="HTML"
 
         )
 
-
         return
-
-
 
 
 
@@ -768,10 +628,7 @@ async def show_packages(query):
 
 
 
-
-
     keyboard = []
-
 
 
 
@@ -786,19 +643,19 @@ async def show_packages(query):
 
         (
 
-            package_id,
+            pid,
 
             name,
 
-            duration,
+            days,
 
             price,
 
             active,
 
-            inbound_id,
+            inbound,
 
-            traffic_gb,
+            gb,
 
             sni
 
@@ -807,621 +664,538 @@ async def show_packages(query):
 
 
 
-        keyboard.append([
-
-
-            InlineKeyboardButton(
-
-
-                f"📦 {name} | {duration}D | "
-
-                f"{gb_text(traffic_gb)} | "
-
-                f"Rs.{price}",
-
-
-                callback_data=
-
-                f"package_{package_id}"
-
-            )
-
-
-        ])
-
-
-
-
-    keyboard.append([
-
-
-        InlineKeyboardButton(
-
-            "🔙 Back",
-
-            callback_data="back"
-
-        )
-
-    ])
-
-
-
-
-
-    await query.edit_message_text(
-
-
-        "🛒 <b>SELECT PACKAGE</b>",
-
-
-        parse_mode="HTML",
-
-
-        reply_markup=InlineKeyboardMarkup(
-
-            keyboard
-
-        )
-
-    )
-
-# =========================================================
-# PART 3/4
-# ORDER + PAYMENT + 3X-UI CONFIG
-# =========================================================
-
-
-# =========================================================
-# CREATE PANEL CONFIG
-# =========================================================
-
-
-async def create_panel_config(
-    order_id,
-    context
-):
-
-
-    order = get_order(order_id)
-
-
-    if not order:
-
-        return False, "Order not found"
-
-
-
-    if len(order) < 15:
-
-        return False, "Invalid order data"
-
-
-
-    (
-
-        db_order_id,
-        user_id,
-        package_id,
-        package_name,
-        duration,
-        price,
-        status,
-        inbound_id,
-        traffic_gb,
-        sni,
-        payment_proof,
-        old_config,
-        old_expiry,
-        created_at,
-        updated_at
-
-    ) = order[:15]
-
-
-
-    user_id = safe_int(user_id)
-
-    duration = safe_int(duration)
-
-    inbound_id = safe_int(inbound_id)
-
-    traffic_gb = safe_float(traffic_gb)
-
-
-
-
-    # LOGIN PANEL
-
-    try:
-
-        ok, msg = xui.login()
-
-
-    except Exception as e:
-
-        return False, str(e)
-
-
-
-    if not ok:
-
-        return False, msg
-
-
-
-
-    # GET INBOUND
-
-    try:
-
-        inbound = xui.get_inbound(
-            inbound_id
-        )
-
-
-    except Exception as e:
-
-        return False, str(e)
-
-
-
-    if not inbound:
-
-        return False, "Inbound not found"
-
-
-
-
-
-    # EXPIRY
-
-    expiry = (
-
-        datetime.now()
-
-        +
-
-        timedelta(
-            days=duration
-        )
-
-    )
-
-
-
-    expiry_ms = int(
-
-        expiry.timestamp()
-
-        *
-
-        1000
-
-    )
-
-
-
-    expiry_text = expiry.strftime(
-
-        "%Y-%m-%d %H:%M"
-
-    )
-
-
-
-
-
-    email = (
-
-        f"vp_{user_id}_{order_id}"
-
-        .replace("-","_")
-
-        .lower()
-
-    )
-
-
-
-
-
-    # CREATE CLIENT
-
-
-    try:
-
-
-        success, result = xui.create_client(
-
-
-            inbound_id=inbound_id,
-
-
-            email=email,
-
-
-            expiry_ms=expiry_ms,
-
-
-            traffic_gb=traffic_gb,
-
-
-            telegram_id=user_id
-
-        )
-
-
-    except Exception as e:
-
-
-        return False, str(e)
-
-
-
-
-    if not success:
-
-
-        return False, str(result)
-
-
-
-
-
-    await asyncio.sleep(1)
-
-
-
-
-
-    links=[]
-
-
-
-    try:
-
-
-        ok,data = xui.get_client_links(
-            email
-        )
-
-
-        if ok:
-
-            links = extract_links(data)
-
-
-
-    except Exception:
-
-        pass
-
-
-
-
-
-    # UUID FALLBACK
-
-
-    client_uuid=None
-
-
-
-    if isinstance(result,dict):
-
-
-        client_uuid = (
-
-            result.get("uuid")
-
-            or
-
-            result.get("id")
-
-        )
-
-
-
-
-
-
-    # VLESS FALLBACK
-
-
-    if not links and client_uuid:
-
-
-        host=url_host(PANEL_URL)
-
-
-        port=inbound.get("port")
-
-
-
-        if host and port:
-
-
-            config=(
-
-
-                f"vless://"
-
-                f"{client_uuid}@"
-
-                f"{host}:{port}"
-
-                f"#{package_name}"
-
-            )
-
-
-            links.append(config)
-
-
-
-
-
-
-
-    if not links:
-
-
-        return False,"Config generate failed"
-
-
-
-
-
-    final_config="\n\n".join(links)
-
-
-
-
-
-    try:
-
-
-        final_config = apply_sni(
-
-            final_config,
-
-            sni
-
-        )
-
-
-    except Exception:
-
-        pass
-
-
-
-
-
-    save_config(
-
-        order_id,
-
-        final_config,
-
-        expiry_text
-
-    )
-
-
-    update_order_status(
-
-        order_id,
-
-        "COMPLETED"
-
-    )
-
-
-
-
-
-    # SEND USER CONFIG
-
-
-    await context.bot.send_message(
-
-
-        chat_id=user_id,
-
-
-        text=(
-
-
-            "🎉 <b>CONFIG READY</b>\n\n"
-
-            f"📦 {package_name}\n"
-
-            f"📅 Expire: {expiry_text}\n\n"
-
-            "<pre>"
-
-            f"{escape(final_config)}"
-
-            "</pre>"
-
-        ),
-
-
-        parse_mode="HTML"
-
-    )
-
-
-
-
-    return True, final_config
-
-
-
-
-
-
-
-# =========================================================
-# CALLBACK BUY SYSTEM
-# =========================================================
-
-
-async def create_order_callback(
-
-    query,
-
-    user
-
-):
-
-
-    package_id = int(
-
-        query.data.split("_")[1]
-
-    )
-
-
-
-    package=get_package(
-        package_id
-    )
-
-
-
-    if not package:
-
-
-        await query.edit_message_text(
-
-            "❌ Package not found"
-
-        )
-
-        return
-
-
-
-
-
-    (
-
-        pid,
-
-        name,
-
-        duration,
-
-        price,
-
-        active,
-
-        inbound_id,
-
-        traffic_gb,
-
-        sni
-
-    )=package[:8]
-
-
-
-
-
-
-    order=create_order(
-
-        user.id,
-
-        package_id
-
-    )
-
-
-
-
-
-    order_id = str(order)
-
-
-
-
-    await query.edit_message_text(
-
-
-        "🧾 <b>ORDER CREATED</b>\n\n"
-
-        f"🆔 <code>{order_id}</code>\n"
-
-        f"📦 {name}\n"
-
-        f"💰 Rs.{price}\n\n"
-
-        "Continue payment:",
-
-
-        parse_mode="HTML",
-
-
-
-        reply_markup=InlineKeyboardMarkup([
-
+        keyboard.append(
 
             [
 
-
                 InlineKeyboardButton(
 
-                    "💳 Payment",
+                    f"📦 {name} | Rs.{price}",
 
-                    callback_data=f"pay_{order_id}"
+                    callback_data=f"package_{pid}"
 
                 )
 
-
             ]
 
-        ])
+        )
+
+
+
+
+    keyboard.append(
+
+        [
+
+            InlineKeyboardButton(
+
+                "🏠 Home",
+
+                callback_data="back"
+
+            )
+
+        ]
 
     )
 
 
 
+    await query.edit_message_text(
+
+        "🛒 <b>Select Package</b>",
+
+        parse_mode="HTML",
+
+        reply_markup=InlineKeyboardMarkup(
+            keyboard
+        )
+
+    )
+# ==============================
+# CALLBACK HANDLER
+# ==============================
 
 
-
-
-
-
-# =========================================================
-# PAYMENT PAGE
-# =========================================================
-
-
-async def payment_page(
-
-    query,
-
-    order_id,
-
-    user
-
+async def button_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
 ):
 
-
-    order=get_order(order_id)
-
+    query = update.callback_query
 
 
-    if not order:
+    if not query:
+        return
+
+
+    try:
+
+        await query.answer()
+
+    except:
+
+        pass
+
+
+
+    user = query.from_user
+
+    data = query.data or ""
+
+
+
+    # DEBUG BUTTON DATA
+
+    print(
+        "BUTTON DATA:",
+        data
+    )
+
+
+
+    # ==============================
+    # ADMIN SECURITY
+    # ==============================
+
+
+    admin_actions = (
+
+        "admin_",
+        "panel_",
+        "approve_",
+        "reject_",
+        "pkg_",
+        "editpkg_",
+        "togglepkg_"
+
+    )
+
+
+    if data.startswith(admin_actions):
+
+
+        if not admin_only(user.id):
+
+            await query.answer(
+
+                "⛔ Admin Only",
+
+                show_alert=True
+
+            )
+
+            return
+
+
+
+
+    # ==============================
+    # BUY
+    # ==============================
+
+
+    if data == "buy":
+
+
+        await show_packages(
+            query
+        )
+
+        return
+
+
+
+
+    # ==============================
+    # PACKAGE SELECT
+    # ==============================
+
+
+    if data.startswith(
+        "package_"
+    ):
+
+
+        try:
+
+            package_id = int(
+
+                data.split("_")[1]
+
+            )
+
+
+        except:
+
+
+            await query.answer(
+
+                "Invalid package",
+
+                show_alert=True
+
+            )
+
+            return
+
+
+
+
+        package = get_package(
+            package_id
+        )
+
+
+
+        if not package:
+
+
+            await query.edit_message_text(
+
+                "❌ Package not found"
+
+            )
+
+            return
+
+
+
+        (
+
+            pid,
+
+            name,
+
+            days,
+
+            price,
+
+            active,
+
+            inbound,
+
+            gb,
+
+            sni
+
+        ) = package[:8]
+
+
+
+        try:
+
+
+            order_id = create_order(
+
+                user.id,
+
+                package_id
+
+            )
+
+
+        except Exception as e:
+
+
+            await query.edit_message_text(
+
+                f"❌ Order Error\n\n{e}"
+
+            )
+
+            return
+
+
 
 
         await query.edit_message_text(
 
-            "❌ Order missing"
+
+            "🧾 <b>ORDER CREATED</b>\n\n"
+
+            f"🆔 <code>{order_id}</code>\n"
+
+            f"📦 {html_text(name)}\n"
+
+            f"⏱ {days} Days\n"
+
+            f"📊 {gb_text(gb)}\n"
+
+            f"💰 Rs.{price}\n\n"
+
+            "Continue payment:",
+
+
+            parse_mode="HTML",
+
+
+            reply_markup=InlineKeyboardMarkup([
+
+
+                [
+
+                    InlineKeyboardButton(
+
+                        "💳 Payment",
+
+                        callback_data=f"pay_{order_id}"
+
+                    )
+
+                ],
+
+
+                [
+
+                    InlineKeyboardButton(
+
+                        "🏠 Home",
+
+                        callback_data="back"
+
+                    )
+
+                ]
+
+            ])
+
+        )
+
+
+        return
+
+
+
+
+
+    # ==============================
+    # PAYMENT
+    # ==============================
+
+
+
+    if data.startswith(
+        "pay_"
+    ):
+
+
+        order_id = data.replace(
+            "pay_",
+            ""
+        )
+
+
+
+        order = get_order(
+            order_id
+        )
+
+
+        if not order:
+
+
+            await query.edit_message_text(
+
+                "❌ Order not found"
+
+            )
+
+            return
+
+
+
+        context.user_data[
+
+            "payment_order"
+
+        ] = order_id
+
+
+
+
+        await query.edit_message_text(
+
+
+            "💳 <b>PAYMENT</b>\n\n"
+
+            f"🧾 Order: <code>{order_id}</code>\n"
+
+            f"💰 Amount: Rs.{order[5]}\n\n"
+
+
+            f"🏦 Bank: {BANK_NAME}\n"
+
+            f"👤 Name: {ACCOUNT_NAME}\n"
+
+            f"🔢 Account: {ACCOUNT_NUMBER}\n"
+
+            f"📍 Branch: {BRANCH}\n\n"
+
+
+            "Payment slip photo send කරන්න.",
+
+
+
+            parse_mode="HTML"
+
+        )
+
+
+        return
+
+
+
+
+
+    # ==============================
+    # MY CONFIGS
+    # ==============================
+
+
+    if data == "configs":
+
+
+        configs = get_user_configs(
+            user.id
+        )
+
+
+        if not configs:
+
+
+            await query.edit_message_text(
+
+                "📦 No configs found",
+
+                reply_markup=InlineKeyboardMarkup([
+
+                    [
+
+                    InlineKeyboardButton(
+
+                        "🏠 Home",
+
+                        callback_data="back"
+
+                    )
+
+                    ]
+
+                ])
+
+            )
+
+
+            return
+
+
+
+        text = "📦 <b>MY CONFIGS</b>\n\n"
+
+
+
+        for c in configs:
+
+
+            text += (
+
+                f"<pre>{escape(str(c[1]))}</pre>\n\n"
+
+            )
+
+
+
+        await query.edit_message_text(
+
+            text[:4000],
+
+            parse_mode="HTML"
+
+        )
+
+
+        return
+
+
+
+
+
+    # ==============================
+    # ORDERS
+    # ==============================
+
+
+    if data == "orders":
+
+
+        orders = get_user_orders(
+            user.id
+        )
+
+
+        if not orders:
+
+
+            await query.edit_message_text(
+
+                "🧾 No orders"
+
+            )
+
+            return
+
+
+
+        text = "🧾 <b>ORDERS</b>\n\n"
+
+
+
+        for o in orders:
+
+
+            text += (
+
+                f"🆔 {o[0]}\n"
+
+                f"📦 {o[1]}\n"
+
+                f"📌 {o[4]}\n\n"
+
+            )
+
+
+
+        await query.edit_message_text(
+
+            text,
+
+            parse_mode="HTML"
+
+        )
+
+
+        return
+
+
+
+
+
+    # ==============================
+    # BACK
+    # ==============================
+
+
+    if data == "back":
+
+
+        await query.edit_message_text(
+
+            "🟢 <b>V2RayX</b>\n\nChoose:",
+
+            parse_mode="HTML",
+
+            reply_markup=main_menu()
 
         )
 
@@ -1431,56 +1205,27 @@ async def payment_page(
 
 
 
-    await query.edit_message_text(
+    # ==============================
+    # UNKNOWN BUTTON FIX
+    # ==============================
 
 
+    await query.answer(
 
-        "💳 <b>PAYMENT DETAILS</b>\n\n"
+        "⚠️ Button expired. Send /start again.",
 
-        f"🧾 Order : <code>{order_id}</code>\n\n"
-
-        f"🏦 Bank : {BANK_NAME}\n"
-
-        f"👤 Name : {ACCOUNT_NAME}\n"
-
-        f"🔢 Account : {ACCOUNT_NUMBER}\n"
-
-        f"📍 Branch : {BRANCH}\n\n"
-
-        "Payment කරලා receipt photo එක upload කරන්න.",
-
-
-
-        parse_mode="HTML"
+        show_alert=True
 
     )
-
-
-
-
-
-    query.message.chat_data[
-
-        "payment_order"
-
-    ] = order_id
-# =========================================================
-# PART 4/4
-# HANDLERS + MAIN
-# =========================================================
-
-
-
-# =========================================================
-# PHOTO PAYMENT RECEIVER
-# =========================================================
+# ==============================
+# PAYMENT PHOTO RECEIVE
+# ==============================
 
 
 async def receive_payment_photo(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
-
 
     user = update.effective_user
 
@@ -1513,7 +1258,6 @@ async def receive_payment_photo(
 
 
 
-
     try:
 
 
@@ -1538,14 +1282,34 @@ async def receive_payment_photo(
         )
 
 
+    except Exception as e:
+
 
         await message.reply_text(
 
-            "✅ Payment slip received.\n"
-            "⏳ Waiting admin approval."
+            f"❌ Upload Error\n{e}"
 
         )
 
+        return
+
+
+
+
+    await message.reply_text(
+
+        "✅ Payment slip received.\n\n"
+        "⏳ Waiting for admin approval."
+
+    )
+
+
+
+
+    # SEND ADMIN ALERT
+
+
+    try:
 
 
         await context.bot.send_photo(
@@ -1561,11 +1325,28 @@ async def receive_payment_photo(
 
                 "💳 NEW PAYMENT\n\n"
 
-                f"Order : {order_id}\n"
+                f"🧾 Order: {order_id}\n"
 
-                f"User : {user.id}"
+                f"👤 User: {user.id}"
 
-            )
+            ),
+
+
+            reply_markup=InlineKeyboardMarkup([
+
+                [
+
+                    InlineKeyboardButton(
+
+                        "Approve",
+
+                        callback_data=f"approve_{order_id}"
+
+                    )
+
+                ]
+
+            ])
 
         )
 
@@ -1573,387 +1354,52 @@ async def receive_payment_photo(
     except Exception as e:
 
 
-        await message.reply_text(
-
-            f"❌ Error: {e}"
-
+        print(
+            "Admin notify:",
+            e
         )
 
 
 
 
+# ==============================
+# ADMIN APPROVE
+# ==============================
 
 
-
-# =========================================================
-# BUTTON HANDLER
-# =========================================================
-
-
-async def button_handler(
-
-    update: Update,
-
-    context: ContextTypes.DEFAULT_TYPE
-
+async def approve_order(
+    query,
+    order_id,
+    context
 ):
 
 
-    query = update.callback_query
+    order = get_order(
+        order_id
+    )
 
 
-    if not query:
-
-        return
-
-
-
-    await query.answer()
-
-
-
-    user=query.from_user
-
-    data=query.data
-
-
-
-
-
-    # BUY
-
-
-    if data=="buy":
-
-
-        await show_packages(query)
-
-        return
-
-
-
-
-
-
-    # PACKAGE SELECT
-
-
-    if data.startswith("package_"):
-
-
-        await create_order_callback(
-
-            query,
-
-            user
-
-        )
-
-        return
-
-
-
-
-
-
-    # PAYMENT
-
-
-    if data.startswith("pay_"):
-
-
-        order_id=data.replace(
-
-            "pay_",
-
-            ""
-
-        )
-
-
-        context.user_data[
-
-            "payment_order"
-
-        ]=order_id
-
-
-
-        await payment_page(
-
-            query,
-
-            order_id,
-
-            user
-
-        )
-
-
-        return
-
-
-
-
-
-
-    # CONFIGS
-
-
-    if data=="configs":
-
-
-        configs=get_user_configs(
-
-            user.id
-
-        )
-
-
-
-        if not configs:
-
-
-            await query.edit_message_text(
-
-                "📦 No configs."
-
-            )
-
-            return
-
-
-
-
-        text="📦 MY CONFIGS\n\n"
-
-
-
-        for c in configs:
-
-
-            text += (
-
-                f"<pre>{escape(str(c))}</pre>\n"
-
-            )
-
+    if not order:
 
 
         await query.edit_message_text(
 
-            text,
-
-            parse_mode="HTML"
+            "❌ Order not found"
 
         )
-
 
         return
 
 
 
 
+    try:
 
 
-    # ADMIN HOME
+        # CREATE PANEL CLIENT
 
 
-    if data=="admin_home":
-
-
-        await send_admin_dashboard(
-
-            user.id,
-
-            context
-
-        )
-
-
-        return
-
-
-
-
-
-
-
-    # ADMIN PENDING
-
-
-    if data=="admin_pending":
-
-
-        orders=get_pending_orders()
-
-
-
-        if not orders:
-
-
-            await query.edit_message_text(
-
-                "No pending orders."
-
-            )
-
-            return
-
-
-
-
-
-        keyboard=[]
-
-
-
-        for row in orders:
-
-
-            keyboard.append([
-
-
-                InlineKeyboardButton(
-
-                    f"{row[0]} | {row[3]}",
-
-
-                    callback_data=
-
-                    f"admin_order_{row[0]}"
-
-                )
-
-
-            ])
-
-
-
-
-
-        await query.edit_message_text(
-
-
-            "🧾 Pending Orders",
-
-
-            reply_markup=InlineKeyboardMarkup(
-
-                keyboard
-
-            )
-
-        )
-
-
-        return
-
-
-
-
-
-
-
-    # ADMIN ORDER VIEW
-
-
-    if data.startswith("admin_order_"):
-
-
-        order_id=data.replace(
-
-            "admin_order_",
-
-            ""
-
-        )
-
-
-
-        await query.edit_message_text(
-
-
-            f"🧾 Order\n\n"
-
-            f"ID: {order_id}",
-
-
-
-            reply_markup=InlineKeyboardMarkup([
-
-
-                [
-
-
-                    InlineKeyboardButton(
-
-                        "✅ Approve",
-
-                        callback_data=
-
-                        f"approve_{order_id}"
-
-                    )
-
-
-                ],
-
-
-                [
-
-
-                    InlineKeyboardButton(
-
-                        "❌ Reject",
-
-                        callback_data=
-
-                        f"reject_{order_id}"
-
-                    )
-
-
-                ]
-
-
-            ])
-
-        )
-
-
-
-        return
-
-
-
-
-
-
-    # APPROVE
-
-
-    if data.startswith("approve_"):
-
-
-        order_id=data.replace(
-
-            "approve_",
-
-            ""
-
-        )
-
-
-        await query.edit_message_text(
-
-            "⏳ Creating config..."
-
-        )
-
-
-
-        ok,result = await create_panel_config(
+        success, config = await create_panel_config(
 
             order_id,
 
@@ -1963,14 +1409,26 @@ async def button_handler(
 
 
 
-        if ok:
+        if success:
+
+
+
+            update_order_status(
+
+                order_id,
+
+                "COMPLETED"
+
+            )
 
 
             await query.edit_message_text(
 
-                "✅ Config created."
+                "✅ Order completed\n\n"
+                f"🧾 {order_id}"
 
             )
+
 
 
         else:
@@ -1978,118 +1436,127 @@ async def button_handler(
 
             await query.edit_message_text(
 
-                f"❌ Error\n{result}"
+                "❌ Config create failed\n\n"
+
+                f"{config}"
 
             )
 
 
 
-        return
-
-
-
-
-
-    # REJECT
-
-
-    if data.startswith("reject_"):
-
-
-        order_id=data.replace(
-
-            "reject_",
-
-            ""
-
-        )
-
-
-        update_order_status(
-
-            order_id,
-
-            "REJECTED"
-
-        )
+    except Exception as e:
 
 
         await query.edit_message_text(
 
-            "❌ Order rejected."
-
-        )
-
-
-        return
-
-
-
-
-
-    # BACK
-
-
-    if data=="back":
-
-
-        await query.edit_message_text(
-
-
-            "🟢 V2RayX",
-
-            reply_markup=main_menu()
+            f"❌ Error\n{e}"
 
         )
 
 
 
 
-
-
-
-
-
-# =========================================================
+# ==============================
 # ERROR HANDLER
-# =========================================================
+# ==============================
 
 
 async def error_handler(
-
     update,
-
     context
-
 ):
 
-
     print(
-
         "ERROR:",
-
         context.error
-
     )
 
+    traceback.print_exc()
+
+
+
+
+# ==============================
+# VALIDATE
+# ==============================
+
+
+def validate_settings():
+
+
+    settings = {
+
+
+        "BOT_TOKEN": BOT_TOKEN,
+
+        "ADMIN_ID": ADMIN_ID,
+
+        "PANEL_URL": PANEL_URL,
+
+        "PANEL_USERNAME": PANEL_USERNAME,
+
+        "PANEL_PASSWORD": PANEL_PASSWORD
+
+
+    }
+
+
+
+    missing = []
+
+
+    for k,v in settings.items():
+
+        if not v:
+
+            missing.append(k)
+
+
+
+    if missing:
+
+
+        print(
+            "Missing settings:"
+        )
+
+
+        for x in missing:
+
+            print(
+                "-",
+                x
+            )
+
+
+        return False
+
+
+
+    return True
 
 
 
 
 
-
-# =========================================================
-# MAIN
-# =========================================================
+# ==============================
+# MAIN TERMUX RUN
+# ==============================
 
 
 def main():
 
 
     print(
+        "======================"
+    )
 
-        "Starting V2RayX Bot..."
+    print(
+        " V2RayX BOT STARTING"
+    )
 
+    print(
+        "======================"
     )
 
 
@@ -2100,28 +1567,53 @@ def main():
 
 
 
+    try:
 
 
-    init_database()
+        init_database()
+
+
+        print(
+            "Database OK"
+        )
+
+
+    except Exception as e:
+
+
+        print(
+            "Database Error:",
+            e
+        )
+
+        return
 
 
 
 
 
-    app=(
+    app = Application.builder().token(
 
-        Application
+        BOT_TOKEN
 
-        .builder()
+    ).connect_timeout(
 
-        .token(BOT_TOKEN)
+        30
 
-        .build()
+    ).read_timeout(
 
-    )
+        30
+
+    ).write_timeout(
+
+        30
+
+    ).build()
 
 
 
+
+    # COMMANDS
 
 
     app.add_handler(
@@ -2137,7 +1629,6 @@ def main():
     )
 
 
-
     app.add_handler(
 
         CommandHandler(
@@ -2149,7 +1640,6 @@ def main():
         )
 
     )
-
 
 
     app.add_handler(
@@ -2166,6 +1656,10 @@ def main():
 
 
 
+
+    # BUTTONS
+
+
     app.add_handler(
 
         CallbackQueryHandler(
@@ -2176,6 +1670,9 @@ def main():
 
     )
 
+
+
+    # PAYMENT PHOTO
 
 
     app.add_handler(
@@ -2201,10 +1698,15 @@ def main():
 
 
 
-
     print(
-
         "BOT RUNNING..."
+    )
+
+
+
+    app.run_polling(
+
+        drop_pending_updates=True
 
     )
 
@@ -2212,19 +1714,12 @@ def main():
 
 
 
-    app.run_polling()
-
-
-
-
-
-
-
-# =========================================================
+# ==============================
 # START
-# =========================================================
+# ==============================
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     main()
+    
